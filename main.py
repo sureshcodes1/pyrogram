@@ -11,7 +11,11 @@ bot_token = os.environ.get("TOKEN", None)
 api_hash = os.environ.get("HASH", None) 
 api_id = os.environ.get("ID", None)
 bot = Client("mybot", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
-
+lastmsgId = 0
+msgId = 0
+messageCopy = ""
+chatid = 0
+uploading = False
 ss = os.environ.get("STRING", None)
 if ss is not None:
 	acc = Client("myacc" ,api_id=api_id, api_hash=api_hash, session_string=ss)
@@ -20,6 +24,9 @@ else: acc = None
 
 # download status
 def downstatus(statusfile,message):
+	print("downstatus")
+	global uploading
+	uploading= False
 	while True:
 		if os.path.exists(statusfile):
 			break
@@ -29,6 +36,7 @@ def downstatus(statusfile,message):
 		with open(statusfile,"r") as downread:
 			txt = downread.read()
 		try:
+			print("-------", txt)
 			bot.edit_message_text(message.chat.id, message.id, f"__Downloaded__ : **{txt}**")
 			time.sleep(10)
 		except:
@@ -37,6 +45,9 @@ def downstatus(statusfile,message):
 
 # upload status
 def upstatus(statusfile,message):
+	print("Uploading status")
+	global uploading
+	uploading = True
 	while True:
 		if os.path.exists(statusfile):
 			break
@@ -54,6 +65,7 @@ def upstatus(statusfile,message):
 
 # progress writter
 def progress(current, total, message, type):
+	print("Progress", current, total)
 	with open(f'{message.id}{type}status.txt',"w") as fileup:
 		fileup.write(f"{current * 100 / total:.1f}%")
 
@@ -69,6 +81,7 @@ def send_start(client: pyrogram.client.Client, message: pyrogram.types.messages_
 def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_media.message.Message):
 
 	# joining chats
+	# print(message)
 	if "https://t.me/+" in message.text or "https://t.me/joinchat/" in message.text:
 
 		if acc is None:
@@ -88,46 +101,58 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
 	
 	# getting message
 	elif "https://t.me/" in message.text:
-
+		global  lastmsgId
+		global messageCopy
+		global msgId
+		global chatid
+		messageCopy = message
+		temp = ''
+		if len(message.text.split("|")) > 1:
+			temp = message.text.split("|")[1]
+		message.text = message.text.split("|")[0]
 		datas = message.text.split("/")
-		msgid = int(datas[-1].split("?")[0])
-
+		msgId = int(datas[-1].split("?")[0])
+		if temp :
+			lastmsgId = int(temp)
+		else :
+			lastmsgId = msgId
 		# private
+		print(lastmsgId)
 		if "https://t.me/c/" in message.text:
 			chatid = int("-100" + datas[-2])
 			if acc is None:
 				bot.send_message(message.chat.id,f"**String Session is not Set**", reply_to_message_id=message.id)
 				return
-			try: handle_private(message,chatid,msgid)
+			try: handle_private(message,chatid,msgId)
 			except Exception as e: bot.send_message(message.chat.id,f"**Error** : __{e}__", reply_to_message_id=message.id)
 		
 		# public
 		else:
 			username = datas[-2]
-			msg  = bot.get_messages(username,msgid)
+			msg  = bot.get_messages(username,msgId)
 			try: bot.copy_message(message.chat.id, msg.chat.id, msg.id,reply_to_message_id=message.id)
 			except:
 				if acc is None:
 					bot.send_message(message.chat.id,f"**String Session is not Set**", reply_to_message_id=message.id)
 					return
-				try: handle_private(message,username,msgid)
+				try: handle_private(message,username,msgId)
 				except Exception as e: bot.send_message(message.chat.id,f"**Error** : __{e}__", reply_to_message_id=message.id)
 	
 
 # handle private
-def handle_private(message,chatid,msgid):
-		msg  = acc.get_messages(chatid,msgid)
-
+def handle_private(message,chatid,msgId):
+		msg  = acc.get_messages(chatid,msgId)
+		print(message)
 		if "text" in str(msg):
 			bot.send_message(message.chat.id, msg.text, entities=msg.entities, reply_to_message_id=message.id)
 			return
-
+		print("before download")
 		smsg = bot.send_message(message.chat.id, '__Downloading__', reply_to_message_id=message.id)
 		dosta = threading.Thread(target=lambda:downstatus(f'{message.id}downstatus.txt',smsg),daemon=True)
 		dosta.start()
-		file = acc.download_media(msg, progress=progress, progress_args=[message,"down"])
+		file = acc.download_media(msg,file_name= str(msgId), progress=progress, progress_args=[message,"down"])
 		os.remove(f'{message.id}downstatus.txt')
-
+		print("after download")
 		upsta = threading.Thread(target=lambda:upstatus(f'{message.id}upstatus.txt',smsg),daemon=True)
 		upsta.start()
 		
@@ -143,9 +168,10 @@ def handle_private(message,chatid,msgid):
 			try: 
 				thumb = acc.download_media(msg.video.thumbs[0].file_id)
 			except: thumb = None
-
+			print("before send vide")
 			bot.send_video(message.chat.id, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message,"up"])
 			if thumb != None: os.remove(thumb)
+			print("after sending")
 
 		elif "Animation" in str(msg):
 			bot.send_animation(message.chat.id, file, reply_to_message_id=message.id)
@@ -170,6 +196,13 @@ def handle_private(message,chatid,msgid):
 		os.remove(file)
 		if os.path.exists(f'{message.id}upstatus.txt'): os.remove(f'{message.id}upstatus.txt')
 		bot.delete_messages(message.chat.id,[smsg.id])
+
+		global lastmsgId
+		print("--last", lastmsgId, msgId)
+		if msgId < lastmsgId:
+			print(msgId + 1)
+			try: handle_private(message,chatid,msgId + 1)
+			except Exception as e: bot.send_message(message.chat.id,f"**Error123** : __{e}__", reply_to_message_id=message.id)
 
 
 # infinty polling
