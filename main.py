@@ -24,7 +24,6 @@ else: acc = None
 
 # download status
 def downstatus(statusfile,message):
-	print("downstatus")
 	global uploading
 	uploading= False
 	while True:
@@ -45,7 +44,6 @@ def downstatus(statusfile,message):
 
 # upload status
 def upstatus(statusfile,message):
-	print("Uploading status")
 	global uploading
 	uploading = True
 	while True:
@@ -65,7 +63,6 @@ def upstatus(statusfile,message):
 
 # progress writter
 def progress(current, total, message, type):
-	print("Progress", current, total)
 	with open(f'{message.id}{type}status.txt',"w") as fileup:
 		fileup.write(f"{current * 100 / total:.1f}%")
 
@@ -142,15 +139,18 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
 # handle private
 def handle_private(message,chatid,msgId):
 		msg  = acc.get_messages(chatid,msgId)
-		print(message)
 		if "text" in str(msg):
 			bot.send_message(message.chat.id, msg.text, entities=msg.entities, reply_to_message_id=message.id)
+			if msgId < lastmsgId:
+				print(msgId + 1)
+				try: handle_private(message,chatid,msgId + 1)
+				except Exception as e: bot.send_message(message.chat.id,f"**Error123** : __{e}__", reply_to_message_id=message.id)
 			return
 		print("before download")
 		smsg = bot.send_message(message.chat.id, '__Downloading__', reply_to_message_id=message.id)
 		dosta = threading.Thread(target=lambda:downstatus(f'{message.id}downstatus.txt',smsg),daemon=True)
 		dosta.start()
-		file = acc.download_media(msg,file_name= str(msgId), progress=progress, progress_args=[message,"down"])
+		file = acc.download_media(msg, progress=progress, progress_args=[message,"down"])
 		os.remove(f'{message.id}downstatus.txt')
 		print("after download")
 		upsta = threading.Thread(target=lambda:upstatus(f'{message.id}upstatus.txt',smsg),daemon=True)
@@ -161,17 +161,15 @@ def handle_private(message,chatid,msgId):
 				thumb = acc.download_media(msg.document.thumbs[0].file_id)
 			except: thumb = None
 			
-			bot.send_document(message.chat.id, file, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message,"up"])
+			bot.send_document(message.chat.id, file, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities, progress=progress, progress_args=[message,"up"])
 			if thumb != None: os.remove(thumb)
 
 		elif "Video" in str(msg):
 			try: 
 				thumb = acc.download_media(msg.video.thumbs[0].file_id)
 			except: thumb = None
-			print("before send vide")
-			bot.send_video(message.chat.id, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message,"up"])
+			bot.send_video(message.chat.id, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities, progress=progress, progress_args=[message,"up"])
 			if thumb != None: os.remove(thumb)
-			print("after sending")
 
 		elif "Animation" in str(msg):
 			bot.send_animation(message.chat.id, file, reply_to_message_id=message.id)
@@ -198,7 +196,6 @@ def handle_private(message,chatid,msgId):
 		bot.delete_messages(message.chat.id,[smsg.id])
 
 		global lastmsgId
-		print("--last", lastmsgId, msgId)
 		if msgId < lastmsgId:
 			print(msgId + 1)
 			try: handle_private(message,chatid,msgId + 1)
