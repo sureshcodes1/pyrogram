@@ -139,6 +139,7 @@ def save(client: pyrogram.client.Client, message: pyrogram.types.messages_and_me
 # handle private
 def handle_private(message,chatid,msgId):
 		msg  = acc.get_messages(chatid,msgId)
+		global lastmsgId
 		if "text" in str(msg):
 			bot.send_message(message.chat.id, msg.text, entities=msg.entities, reply_to_message_id=message.id)
 			if msgId < lastmsgId:
@@ -195,7 +196,6 @@ def handle_private(message,chatid,msgId):
 		if os.path.exists(f'{message.id}upstatus.txt'): os.remove(f'{message.id}upstatus.txt')
 		bot.delete_messages(message.chat.id,[smsg.id])
 
-		global lastmsgId
 		if msgId < lastmsgId:
 			print(msgId + 1)
 			try: handle_private(message,chatid,msgId + 1)
