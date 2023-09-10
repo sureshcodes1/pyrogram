@@ -169,48 +169,51 @@ def handle_private(message,chatid,msgId):
 		# if targetChatId:
 			# localTargetChatId = int(targetChatId)
 		# print(message.chat.id, localTargetChatId)
-		if "Document" in str(msg):
-			try:
-				thumb = acc.download_media(msg.document.thumbs[0].file_id)
-			except: thumb = None
-			
-			newMSg = bot.send_document(localTargetChatId, file, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities)
-			if thumb != None: os.remove(thumb)
-
-		elif "Video" in str(msg):
-			try: 
-				thumb = acc.download_media(msg.video.thumbs[0].file_id)
-			except: thumb = None
-			newMSg = bot.send_video(localTargetChatId, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities)
-			if thumb != None: os.remove(thumb)
-
-		elif "Animation" in str(msg):
-			newMSg = bot.send_animation(localTargetChatId, file, reply_to_message_id=message.id)
-			   
-		elif "Sticker" in str(msg):
-			newMSg = bot.send_sticker(localTargetChatId, file, reply_to_message_id=message.id)
-
-		elif "Voice" in str(msg):
-			newMSg = bot.send_voice(localTargetChatId, file, caption=msg.caption, thumb=thumb, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message,"up"])
-
-		elif "Audio" in str(msg):
-			try:
-				thumb = acc.download_media(msg.audio.thumbs[0].file_id)
-			except: thumb = None
+		try: 
+			if "Document" in str(msg):
+				try:
+					thumb = acc.download_media(msg.document.thumbs[0].file_id)
+				except: thumb = None
 				
-			newMSg = bot.send_audio(localTargetChatId, file, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message,"up"])   
-			if thumb != None: os.remove(thumb)
+				newMSg = bot.send_document(localTargetChatId, file, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities)
+				if thumb != None: os.remove(thumb)
 
-		elif "Photo" in str(msg):
-			newMSg = bot.send_photo(localTargetChatId, file, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id)
+			elif "Video" in str(msg):
+				try: 
+					thumb = acc.download_media(msg.video.thumbs[0].file_id)
+				except: thumb = None
+				newMSg = bot.send_video(localTargetChatId, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities)
+				if thumb != None: os.remove(thumb)
 
-		os.remove(file)
-		if os.path.exists(f'{message.id}upstatus.txt'): os.remove(f'{message.id}upstatus.txt')
-		bot.delete_messages(localTargetChatId,[smsg.id])
-		# if newMSg and targetChatId: newMSg.forward(targetChatId)
-		if msgId < lastmsgId:
-			try: handle_private(message,chatid,msgId + 1)
-			except Exception as e: bot.send_message(message.chat.id,f"**Error123** : __{e}__", reply_to_message_id=message.id)
+			elif "Animation" in str(msg):
+				newMSg = bot.send_animation(localTargetChatId, file, reply_to_message_id=message.id)
+				
+			elif "Sticker" in str(msg):
+				newMSg = bot.send_sticker(localTargetChatId, file, reply_to_message_id=message.id)
+
+			elif "Voice" in str(msg):
+				newMSg = bot.send_voice(localTargetChatId, file, caption=msg.caption, thumb=thumb, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message,"up"])
+
+			elif "Audio" in str(msg):
+				try:
+					thumb = acc.download_media(msg.audio.thumbs[0].file_id)
+				except: thumb = None
+					
+				newMSg = bot.send_audio(localTargetChatId, file, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id, progress=progress, progress_args=[message,"up"])   
+				if thumb != None: os.remove(thumb)
+
+			elif "Photo" in str(msg):
+				newMSg = bot.send_photo(localTargetChatId, file, caption=msg.caption, caption_entities=msg.caption_entities, reply_to_message_id=message.id)
+		except Exception as e: print("erorr")
+		finally:
+			os.remove(file)
+			if os.path.exists(f'{message.id}upstatus.txt'): os.remove(f'{message.id}upstatus.txt')
+			bot.delete_messages(localTargetChatId,[smsg.id])
+			# if newMSg and targetChatId: newMSg.forward(targetChatId)
+			if msgId < lastmsgId:
+				try: handle_private(message,chatid,msgId + 1)
+				except Exception as e: bot.send_message(message.chat.id,f"**Error123** : __{e}__", reply_to_message_id=message.id)
+
 
 
 # infinty polling
