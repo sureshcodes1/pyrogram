@@ -1,6 +1,6 @@
 import pyrogram
 from pyrogram import Client, filters
-from pyrogram.errors import UserAlreadyParticipant, InviteHashExpired
+from pyrogram.errors import UserAlreadyParticipant, InviteHashExpired, FloodWait
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 import time
