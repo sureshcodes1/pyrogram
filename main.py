@@ -157,12 +157,12 @@ def handle_private(message,chatid,msgId):
 				except Exception as e: bot.send_message(message.chat.id,f"**Error123** : __{e}__", reply_to_message_id=message.id)
 			return
 		smsg = bot.send_message(message.chat.id, '__Downloading__' + str(msgId) , reply_to_message_id=message.id)
-		dosta = threading.Thread(target=lambda:downstatus(f'{message.id}downstatus.txt',smsg),daemon=True)
-		dosta.start()
-		file = acc.download_media(msg, progress=progress, progress_args=[message,"down"])
-		os.remove(f'{message.id}downstatus.txt')
-		upsta = threading.Thread(target=lambda:upstatus(f'{message.id}upstatus.txt',smsg),daemon=True)
-		upsta.start()
+		# dosta = threading.Thread(target=lambda:downstatus(f'{message.id}downstatus.txt',smsg),daemon=True)
+		# dosta.start()
+		file = acc.download_media(msg)
+		if os.path.exists(f'{message.id}downstatus.txt'): os.remove(f'{message.id}downstatus.txt')
+		# upsta = threading.Thread(target=lambda:upstatus(f'{message.id}upstatus.txt',smsg),daemon=True)
+		# upsta.start()
 
 		localTargetChatId = message.chat.id
 		global targetChatId, newMSg
@@ -174,14 +174,14 @@ def handle_private(message,chatid,msgId):
 				thumb = acc.download_media(msg.document.thumbs[0].file_id)
 			except: thumb = None
 			
-			newMSg = bot.send_document(localTargetChatId, file, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities, progress=progress, progress_args=[message,"up"])
+			newMSg = bot.send_document(localTargetChatId, file, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities)
 			if thumb != None: os.remove(thumb)
 
 		elif "Video" in str(msg):
 			try: 
 				thumb = acc.download_media(msg.video.thumbs[0].file_id)
 			except: thumb = None
-			newMSg = bot.send_video(localTargetChatId, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities, progress=progress, progress_args=[message,"up"])
+			newMSg = bot.send_video(localTargetChatId, file, duration=msg.video.duration, width=msg.video.width, height=msg.video.height, thumb=thumb, caption=msg.caption, caption_entities=msg.caption_entities)
 			if thumb != None: os.remove(thumb)
 
 		elif "Animation" in str(msg):
